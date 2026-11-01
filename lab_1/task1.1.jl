@@ -27,11 +27,13 @@ function reconstruct_literal(codes, adc::ADC)
 end
 
 # построение графика
-function save_adc_plot(name, time, analog, adc::ADC; title_text=name) # последнее - имя графика
+function save_adc_plot(name, time, analog, adc::ADC; title_text=name,
+		analog_seriestype=:path) # последнее - имя графика
 	codes = adc_literal(analog, adc)
 	quantized = reconstruct_literal(codes, adc)
 
-	plot(time, analog, label="xA(t)", linewidth=2, xlabel="t, s", ylabel="Амплитуда",
+	plot(time, analog, label="xA(t)", seriestype=analog_seriestype, linewidth=2,
+		xlabel="t, s", ylabel="Амплитуда",
 		 title="$title_text, fs=$(Int(adc.fs)) Гц, M=$(adc.M)")
 	plot!(time, quantized, label="x[n] по (1),(2)", seriestype=:sticks,
 		marker=:circle, linewidth=1)
@@ -51,7 +53,7 @@ end
 function save_delta_plot(adc::ADC, name)
 	time, codes, signal = digital_delta(adc)
 	analog = zeros(length(time))
-	plot(time, analog, color=:orange, label="xA(t)", linewidth=2,
+	plot(time, analog, label="xA(t)", linewidth=2,
 		 xlabel="t, s", ylabel="Амплитуда", ylims=(-0.1, 1.0),
 		 title="Ручной цифровой дельта-импульс, M=$(adc.M)")
 	plot!(time, signal, seriestype=:sticks, label="цифровой δ[n]", marker=:circle,
@@ -85,7 +87,8 @@ function run()
 	)
 
 	for (name, signal) in signals_1
-		save_adc_plot("adc1_" * name, time_1, signal, adc_1; title_text=name)
+		save_adc_plot("adc1_" * name, time_1, signal, adc_1;
+			title_text=name, analog_seriestype=name in ("constant_1", "constant_2") ? :steppost : :path)
 	end
 
 	# второй
@@ -95,7 +98,7 @@ function run()
 		"exp_decay" => 2 .* exp.(-0.5 .* time_2),
 		"exp_growth" => 4 .* exp.(0.5 .* time_2),
 		"harmonic_1" => 0.5 .* sin.(2pi .* time_2),
-		"harmonic_2" => 5 .* sin.(2pi .* 100 .* time_2),
+		"harmonic_2" => 5 .* sinpi.(200 .* time_2),
 		"harmonic_3" => sin.(2pi .* 0.1 .* time_2 .+ pi / 4),
 		"polyharmonic" => cos.(2pi .* time_2) .+
 			0.5 .* cos.(2pi .* 3 .* time_2) .+
@@ -108,7 +111,8 @@ function run()
 	)
 
 	for (name, signal) in signals_2
-		save_adc_plot("adc2_" * name, time_2, signal, adc_2; title_text=name)
+		save_adc_plot("adc2_" * name, time_2, signal, adc_2;
+			title_text=name, analog_seriestype=name in ("constant_1", "constant_2") ? :steppost : :path)
 	end
 
 	save_delta_plot(adc_1, "adc1_delta_manual")
